@@ -15,8 +15,11 @@ class ForeCastRequest {
         final CurrentWeather currentWeather =
             currentWeatherFromJson(response.body);
         return currentWeather;
+      } else if (404 == response.statusCode) {
+        forecastError("City not found, try another location");
+        return;
       } else {
-        forecastError("Error connecting to server");
+        forecastError("Error getting information");
       }
     } catch (e) {
       forecastError("Error connecting to server");
@@ -33,8 +36,11 @@ class ForeCastRequest {
         final HourlyForecast hourlyforecast =
             hourForecastFromJson((response.body));
         return hourlyforecast;
+      } else if (404 == response.statusCode) {
+        forecastError("City not found, try another location");
+        return;
       } else {
-        forecastError("Error connecting to server");
+        forecastError("Error getting information");
       }
     } catch (e) {
       forecastError("Error connecting to server");
@@ -55,7 +61,7 @@ class ForeCastRequest {
             currentWeatherFromJson(response.body);
         return currentWeather;
       } else {
-        forecastError("Error connecting to server");
+        forecastError("Error getting information");
       }
     } catch (e) {
       forecastError("Error getting your location's weather");

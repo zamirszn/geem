@@ -19,13 +19,13 @@ List<Color> cloudyColor = [geemBlue, geemLightBlue];
 List<Color> snowyColor = [geemSnowWhite, geemSnowWhite2];
 List<Color> nightColor = [geemNightColor, geemNightColor2];
 
-Color appColor = Colors.white;
+Color appColor = geemNightColor;
 
-List<Color> appGradientColor = [Colors.white, Colors.grey];
+
+List<Color> appGradientColor = [geemNightColor, geemNightColor2];
 
 setNightColor() {
   appGradientColor = nightColor;
   appColor = geemNightColor;
+  
 }
-
-

@@ -50,8 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    enableUserLocation();
     getUserLocationPermission();
+    enableUserLocation();
     checkInternetStream();
   }
 
@@ -99,20 +99,24 @@ class _HomeScreenState extends State<HomeScreen> {
       forecasts,
     ) {
       hourlyForecasts = forecasts;
+      setState(() {
+        
+      });
     });
 
     cityName.value = await getCityName(location.latitude, location.longitude);
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => setState(() {}),
-      // this is my favorite code line saved me 2 days of debugging please dont remove this line
-      // okay here's a story , when i update data from the , the widgets tree doesnt rebuild even after calling
-      // setState() , this line of code forces a rebuild after the first build and data is gotten from the api
-      // i spent more than 2 days fixing this issue , i could use futurebuilder (which i was supposed to use) , it would break
-      // alot of feature ,lesson learnt
+    // this is my favorite code line saved me 2 days of debugging please dont remove this line
+    // okay here's a story , when i update data from the , the widgets tree doesnt rebuild even after calling
+    // setState() , this line of code forces a rebuild after the first build and data is gotten from the api
+    // i spent more than 2 days fixing this issue , i could use futurebuilder (which i was supposed to use) , it would break
+    // alot of feature ,lesson learnt
     );
     final Size deviceScreen = MediaQuery.of(context).size;
 
@@ -171,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     page: MaxMinTempScreen(hourlyForecasts: hourlyForecasts),
                     pageAnimationType: BottomToTopTransition()));
               } else {
-                forecastError("Please check your internet connection !");
+                forecastError("No data yet, please wait");
               }
             },
             icon: const Icon(
@@ -185,10 +189,13 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.transparent,
       ),
       body: isLoadingData
-          ? Center(
-              child: CircularProgressIndicator(
-              color: geemBlackBlue,
-            ))
+          ? ColourContainer(
+              gradientColor: appGradientColor,
+              child: const Center(
+                  child: CircularProgressIndicator(
+                color: Colors.white,
+              )),
+            )
           : ColourContainer(
               gradientColor: appGradientColor,
               child: Column(

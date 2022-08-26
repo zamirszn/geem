@@ -14,9 +14,11 @@ class ColourContainer extends StatefulWidget {
 class _ColourContainerState extends State<ColourContainer> {
   @override
   Widget build(BuildContext context) {
-     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => setState(() {}),
-    );
+    // WidgetsBinding.instance.addPostFrameCallback(
+    //   (_) => setState(() {
+        
+    //   }),
+    // );
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
