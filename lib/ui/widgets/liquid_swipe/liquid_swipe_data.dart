@@ -120,11 +120,11 @@ class LiquidSwipeData {
   }
 
   @override
-  operator ==(covariant LiquidSwipeData old) =>
-      old.diameter == diameter &&
-      old.localPosition == localPosition &&
-      old.padding == padding &&
-      old.size == size;
+  operator ==(covariant LiquidSwipeData other) =>
+      other.diameter == diameter &&
+      other.localPosition == localPosition &&
+      other.padding == padding &&
+      other.size == size;
 
   @override
   int get hashCode =>

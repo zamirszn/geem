@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geem/network/internet_connectivity.dart';
@@ -7,6 +6,8 @@ import 'package:geem/network/location.dart';
 import 'package:geem/services/forecast_requests.dart';
 import 'package:geem/ui/animation/grow_ontap_animation.dart';
 import 'package:geem/ui/icons/geem_icons_icons.dart';
+import 'package:geem/ui/screens/error_screen.dart';
+import 'package:geem/ui/screens/loading_screen.dart';
 import 'package:geem/ui/screens/max_min_temp_forecast_screen.dart';
 import 'package:geem/ui/widgets/colour_container.dart';
 import 'package:geem/ui/widgets/daily_forecast_widget.dart';
@@ -18,10 +19,8 @@ import 'package:geem/ui/widgets/weather_scenes/clear_sky.dart';
 import 'package:geem/ui/widgets/weather_scenes/snowy.dart';
 import 'package:geem/ui/widgets/weather_scenes/thunder_storm.dart';
 import 'package:geem/util/constants.dart';
-
 import 'package:geem/util/colors.dart';
 import 'package:geem/util/converters.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:location/location.dart';
 import 'package:page_animation_transition/animations/bottom_to_top_transition.dart';
 import 'package:page_animation_transition/page_animation_transition.dart';
@@ -35,34 +34,44 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool hasInternet = false;
-  StreamSubscription? checkInternetSubscription;
   late Color appColor_;
   late List<Color> appGradientColor_;
   bool isLoadingData = true;
-
-  @override
-  void dispose() {
-    checkInternetSubscription?.cancel();
-    super.dispose();
-  }
+  bool hasUserLocationData = false;
+  bool hasLocationPermission = false;
 
   @override
   void initState() {
     super.initState();
-    getUserLocationPermission();
-    enableUserLocation();
-    checkInternetStream();
+    checkLocationPermission();
   }
 
-  checkInternetStream() {
-    checkInternetSubscription =
-        InternetConnectionChecker().onStatusChange.listen((internetStatus) {
-      final hasInterent_ = internetStatus == InternetConnectionStatus.connected;
-      hasInternet = hasInterent_;
+  checkLocationPermission() {
+    Future<bool> getPermission = getUserLocationPermission();
+    getPermission.then((value) {
+      hasLocationPermission = value;
+      if (hasLocationPermission == true) {
+        checkLocation();
+      } else {
+        hasUserLocationData = false;
+      }
+    });
+  }
 
-      hasInternet ? getForecastByLocation() : () {} //can set state here
-          ;
+  checkLocation() {
+    Future<bool> getLocation = enableUserLocation();
+    getLocation.then((value) {
+      hasUserLocationData = value;
+      if (hasUserLocationData == true) {
+        setState(() {
+          isLoadingData = true;
+        });
+        getForecastByLocation();
+      } else {
+        setState(() {
+          isLoadingData = false;
+        });
+      }
     });
   }
 
@@ -82,11 +91,10 @@ class _HomeScreenState extends State<HomeScreen> {
         hourlyForecasts = forecasts;
       });
     });
+    setState(() {});
   }
 
   void getForecastByLocation() async {
-    showNotificaton("Getting forecasts for your location");
-
     LocationData location = await getUserLocation();
 
     ForeCastRequest().getCurrentWeatherByLatLong(location).then((weather) {
@@ -99,9 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
       forecasts,
     ) {
       hourlyForecasts = forecasts;
-      setState(() {
-        
-      });
+      setState(() {});
     });
 
     cityName.value = await getCityName(location.latitude, location.longitude);
@@ -112,213 +118,219 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => setState(() {}),
-    // this is my favorite code line saved me 2 days of debugging please dont remove this line
-    // okay here's a story , when i update data from the , the widgets tree doesnt rebuild even after calling
-    // setState() , this line of code forces a rebuild after the first build and data is gotten from the api
-    // i spent more than 2 days fixing this issue , i could use futurebuilder (which i was supposed to use) , it would break
-    // alot of feature ,lesson learnt
+      // dont fucking think of removing this callback except you want sleepless nights
     );
     final Size deviceScreen = MediaQuery.of(context).size;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarBrightness: Brightness.light,
-          statusBarColor: appColor,
-          statusBarIconBrightness: Brightness.dark,
-        ),
-        leading: GrowOnTap(
-          duration: const Duration(milliseconds: 500),
-          onPressed: () {
-            getForecastByLocation();
-          },
-          child: const Icon(
-            GeemIcons.location,
-            size: 20,
-            color: Colors.black,
-          ),
-        ),
-        title: Row(
-          children: [
-            GestureDetector(
-              onTap: () => showCitiesBottomSheet(context, deviceScreen),
-              child: ValueListenableBuilder(
-                valueListenable: cityName,
-                builder: (context, value, child) => SizedBox(
-                  width: 80,
-                  child: Text(
-                    overflow: TextOverflow.ellipsis,
-                    ('$value'),
-                    style: const TextStyle(
+    return hasUserLocationData == false
+        ? ErrorScreen(
+            deviceScreen: deviceScreen,
+            onPressed: () {
+              checkLocationPermission();
+            })
+        : isLoadingData
+            ? LoadingScreen(
+                deviceScreen: deviceScreen,
+              )
+            : Scaffold(
+                extendBodyBehindAppBar: true,
+                appBar: AppBar(
+                  systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarBrightness: Brightness.light,
+                    statusBarColor: appColor,
+                    statusBarIconBrightness: Brightness.dark,
+                  ),
+                  leading: GrowOnTap(
+                    duration: const Duration(milliseconds: 500),
+                    onPressed: () {
+                      showNotificaton("Getting forecast for your location");
+                      getForecastByLocation();
+                    },
+                    child: const Icon(
+                      GeemIcons.location,
+                      size: 20,
                       color: Colors.black,
                     ),
                   ),
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: () => showCitiesBottomSheet(context, deviceScreen),
-              icon: const Icon(
-                GeemIcons.down_open_mini,
-                size: 20,
-                color: Colors.black,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              if (hourlyForecasts != null) {
-                Navigator.of(context).push(PageAnimationTransition(
-                    page: MaxMinTempScreen(hourlyForecasts: hourlyForecasts),
-                    pageAnimationType: BottomToTopTransition()));
-              } else {
-                forecastError("No data yet, please wait");
-              }
-            },
-            icon: const Icon(
-              GeemIcons.calendar_alt,
-              size: 20,
-              color: Colors.black,
-            ),
-          )
-        ],
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: isLoadingData
-          ? ColourContainer(
-              gradientColor: appGradientColor,
-              child: const Center(
-                  child: CircularProgressIndicator(
-                color: Colors.white,
-              )),
-            )
-          : ColourContainer(
-              gradientColor: appGradientColor,
-              child: Column(
-                children: [
-                  const SizedBox(
-                    height: 80.0,
-                  ),
-                  SizedBox(
-                    height: deviceScreen.height / 3,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(seconds: 2),
-                        child: checkWeatherType(),
-                      ),
-                    ),
-                  ),
-                  GrowOnTap(
-                    duration: const Duration(milliseconds: 200),
-                    onPressed: () {},
-                    child: SizedBox(
-                      height: deviceScreen.height / 5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            //current weather name
-                            currentWeather?.weather[0].main ?? "",
-                            style: const TextStyle(fontSize: 20),
+                  title: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () =>
+                            showCitiesBottomSheet(context, deviceScreen),
+                        child: ValueListenableBuilder(
+                          valueListenable: cityName,
+                          builder: (context, value, child) => SizedBox(
+                            width: 80,
+                            child: Text(
+                              overflow: TextOverflow.ellipsis,
+                              ('$value'),
+                              style: const TextStyle(
+                                color: Colors.black,
+                              ),
+                            ),
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () =>
+                            showCitiesBottomSheet(context, deviceScreen),
+                        icon: const Icon(
+                          GeemIcons.down_open_mini,
+                          size: 20,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    IconButton(
+                      onPressed: () {
+                        if (hourlyForecasts != null) {
+                          Navigator.of(context).push(PageAnimationTransition(
+                              page: MaxMinTempScreen(
+                                  hourlyForecasts: hourlyForecasts),
+                              pageAnimationType: BottomToTopTransition()));
+                        } else {
+                          forecastError("No data yet, please wait");
+                        }
+                      },
+                      icon: const Icon(
+                        GeemIcons.calendar_alt,
+                        size: 20,
+                        color: Colors.black,
+                      ),
+                    )
+                  ],
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                ),
+                body: ColourContainer(
+                  gradientColor: appGradientColor,
+                  child: Column(
+                    children: [
+                      const SizedBox(
+                        height: 80.0,
+                      ),
+                      SizedBox(
+                        height: deviceScreen.height / 3,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(seconds: 2),
+                            child: checkWeatherType(),
+                          ),
+                        ),
+                      ),
+                      GrowOnTap(
+                        duration: const Duration(milliseconds: 200),
+                        onPressed: () {},
+                        child: SizedBox(
+                          height: deviceScreen.height / 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                currentWeather?.main.temp.round().toString() ??
-                                    "0",
-                                style: const TextStyle(fontSize: 90),
+                                //current weather name
+                                currentWeather?.weather[0].main ?? "",
+                                style: const TextStyle(fontSize: 20),
                               ),
-                              const Text(
-                                "\u00B0",
-                                style: TextStyle(fontSize: 90),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(GeemIcons.wind),
-                              const SizedBox(width: 7),
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    currentWeather?.wind.speed
-                                            ?.round()
+                                    currentWeather?.main.temp
+                                            .round()
                                             .toString() ??
                                         "0",
-                                    style: const TextStyle(
-                                        fontSize: 15, color: Colors.black),
+                                    style: const TextStyle(fontSize: 90),
                                   ),
                                   const Text(
-                                    " km/h",
-                                    style: TextStyle(
-                                        fontSize: 15, color: Colors.black),
+                                    "\u00B0",
+                                    style: TextStyle(fontSize: 90),
                                   ),
                                 ],
                               ),
-                              const SizedBox(width: 20),
-                              const Icon(GeemIcons.droplet),
-                              const SizedBox(width: 7),
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    currentWeather?.main.humidity.toString() ??
-                                        "0",
-                                    style: const TextStyle(
-                                        fontSize: 15, color: Colors.black),
+                                  const Icon(GeemIcons.wind),
+                                  const SizedBox(width: 7),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        currentWeather?.wind.speed
+                                                ?.round()
+                                                .toString() ??
+                                            "0",
+                                        style: const TextStyle(
+                                            fontSize: 15, color: Colors.black),
+                                      ),
+                                      const Text(
+                                        " km/h",
+                                        style: TextStyle(
+                                            fontSize: 15, color: Colors.black),
+                                      ),
+                                    ],
                                   ),
-                                  const Text(
-                                    " %",
-                                    style: TextStyle(
-                                        fontSize: 15, color: Colors.black),
+                                  const SizedBox(width: 20),
+                                  const Icon(GeemIcons.droplet),
+                                  const SizedBox(width: 7),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        currentWeather?.main.humidity
+                                                .toString() ??
+                                            "0",
+                                        style: const TextStyle(
+                                            fontSize: 15, color: Colors.black),
+                                      ),
+                                      const Text(
+                                        " %",
+                                        style: TextStyle(
+                                            fontSize: 15, color: Colors.black),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                      SizedBox(
+                          height: deviceScreen.height / 3,
+                          child: ListView.separated(
+                            physics: const BouncingScrollPhysics(),
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, index) => ShowUpAnimation(
+                              delayStart: const Duration(seconds: 0),
+                              animationDuration: const Duration(seconds: 2),
+                              curve: Curves.bounceIn,
+                              direction: Direction.vertical,
+                              offset: 0.9 * index,
+                              child: HourlyForeCastWidget(
+                                iconData: checkWeatherIcon(hourlyForecasts!
+                                    .element[index].weather[0].icon),
+                                temperature: hourlyForecasts
+                                        ?.element[index].main.temp
+                                        .round()
+                                        .toString() ??
+                                    "0 ",
+                                time: hourlyForecasts?.element[index].dtTxt
+                                        .toString() ??
+                                    "00 ",
+                              ),
+                            ),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(
+                              width: 0,
+                            ),
+                            itemCount: hourlyForecasts?.cnt ?? 0,
+                          ))
+                    ],
                   ),
-                  SizedBox(
-                      height: deviceScreen.height / 3,
-                      child: ListView.separated(
-                        physics: const BouncingScrollPhysics(),
-                        scrollDirection: Axis.horizontal,
-                        itemBuilder: (context, index) => ShowUpAnimation(
-                          delayStart: const Duration(seconds: 0),
-                          animationDuration: const Duration(seconds: 2),
-                          curve: Curves.bounceIn,
-                          direction: Direction.vertical,
-                          offset: 0.9 * index,
-                          child: HourlyForeCastWidget(
-                            iconData: checkWeatherIcon(hourlyForecasts!
-                                .element[index].weather[0].icon),
-                            temperature: hourlyForecasts
-                                    ?.element[index].main.temp
-                                    .round()
-                                    .toString() ??
-                                "0 ",
-                            time: hourlyForecasts?.element[index].dtTxt
-                                    .toString() ??
-                                "00 ",
-                          ),
-                        ),
-                        separatorBuilder: (context, index) => const SizedBox(
-                          width: 0,
-                        ),
-                        itemCount: hourlyForecasts?.cnt ?? 0,
-                      ))
-                ],
-              ),
-            ),
-    );
+                ),
+              );
   }
 
   Widget checkWeatherType() {

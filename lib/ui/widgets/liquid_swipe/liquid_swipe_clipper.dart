@@ -12,7 +12,7 @@ class LiquidSwipeClipper extends CustomClipper<Path> {
   final LiquidSwipeData data;
 
   @override
-  Path getClip(_) {
+  Path getClip(size) {
     return data.liquidSwipePath;
   }
 

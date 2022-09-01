@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:geem/util/colors.dart';
 import 'package:overlay_support/overlay_support.dart';
 
+ // checkInternetStream() {
+  //   checkInternetSubscription =
+  //       InternetConnectionChecker().onStatusChange.listen((internetStatus) {
+  //     final hasInterent_ = internetStatus == InternetConnectionStatus.connected;
+  //     hasInternet = hasInterent_;
+
+  //     // hasInternet ? getForecastByLocation() : () {} //can set state here
+  //   });
+  // }
+
 // checkInternet() async {
 //   hasInterent = await InternetConnectionChecker().hasConnection;
 

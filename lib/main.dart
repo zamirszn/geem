@@ -39,7 +39,7 @@ class GeemApp extends StatelessWidget {
           fontFamily: "PulpDisplay",
           scrollbarTheme: ScrollbarThemeData(
             thickness: MaterialStateProperty.all(7),
-            thumbColor: MaterialStateProperty.all(appColor),
+            thumbColor: MaterialStateProperty.all(Colors.white),
           ),
           primaryColor: geemBlue,
         ),

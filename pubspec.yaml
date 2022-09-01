@@ -39,7 +39,8 @@ dependencies:
   shared_preferences: ^2.0.12
   geocoding: ^2.0.4
   page_animation_transition: ^0.0.9
-  # google_fonts: ^3.0.1
+  lottie: ^1.4.2
+
   
   
 flutter_native_splash:
@@ -93,6 +94,8 @@ flutter:
    - images/thunder.png
    - images/snow.png
    - images/geem_logo.png
+   - lottie/cloud_attention.json
+   - lottie/cloud_loading.json
   
 
   # To add assets to your application, add an assets section, like this:

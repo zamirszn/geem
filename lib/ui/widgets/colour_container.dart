@@ -16,10 +16,13 @@ class _ColourContainerState extends State<ColourContainer> {
   Widget build(BuildContext context) {
     // WidgetsBinding.instance.addPostFrameCallback(
     //   (_) => setState(() {
-        
+
     //   }),
     // );
+    final Size deviceScreen = MediaQuery.of(context).size;
     return Container(
+      height: deviceScreen.height,
+      width: deviceScreen.width,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: widget.gradientColor,

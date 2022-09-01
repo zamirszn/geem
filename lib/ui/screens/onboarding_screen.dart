@@ -51,8 +51,8 @@ class _LiquidSwipeOnboardingState extends State<LiquidSwipeOnboarding> {
             image: const AssetImage("images/geem_logo.png"),
             title: "Get Precise",
             subtitle: "Weather Forecasts",
-            body: "Best solution to get live and accurate\n"
-                "forecasts in your city ",
+            body: "Best solution to get live and accurate forecasts \n"
+                "in your city ",
             buttonColor: geemBlackBlue,
             titleColor: Colors.grey.shade700,
             subtitleColor: Colors.grey.shade900,
